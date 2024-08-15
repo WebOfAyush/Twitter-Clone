@@ -8,7 +8,7 @@ export default defineConfig({
     port:5000,
     proxy:{
       "/api":{
-        target:"http://localhost:3000",
+        target:"https://x-clone-webofayush.vercel.app/",
         changeOrigin:true,
       }
     }
