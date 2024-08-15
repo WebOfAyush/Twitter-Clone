@@ -243,7 +243,7 @@ const Post = ({ post }) => {
                 </form>
               </dialog>
               <div className="flex gap-1 items-center group cursor-pointer">
-                <BiRepost className="w-6 h-6  text-slate-500 group-hover:text-green-500" />
+{/*                 <BiRepost className="w-6 h-6  text-slate-500 group-hover:text-green-500" /> */}
                 <span className="text-sm text-slate-500 group-hover:text-green-500">
                   0
                 </span>
@@ -270,7 +270,7 @@ const Post = ({ post }) => {
               </div>
             </div>
             <div className="flex w-1/3 justify-end gap-2 items-center">
-              <FaRegBookmark className="w-4 h-4 text-slate-500 cursor-pointer" />
+{/*               <FaRegBookmark className="w-4 h-4 text-slate-500 cursor-pointer" /> */}
             </div>
           </div>
         </div>
