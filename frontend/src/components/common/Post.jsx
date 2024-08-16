@@ -17,6 +17,7 @@ const Post = ({ post }) => {
   const queryClient = useQueryClient();
   const postOwner = post.user;
   const isLiked = post.likes.includes(authUser._id);
+  const isSaved = post.saved.includes(authUser._id);
 
   const isMyPost = authUser._id === post.user._id;
 
@@ -42,7 +43,7 @@ const Post = ({ post }) => {
       toast.success("Post deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
-  });
+  }); 
 
   const { mutate: likePost, isPending: isLiking } = useMutation({
     mutationFn: async () => {
@@ -68,6 +69,39 @@ const Post = ({ post }) => {
         return oldData.map((p) => {
           if (p._id === post._id) {
             return { ...p, likes: updatedLikes };
+          }
+          return p;
+        });
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+  const { mutate: savePost, isPending: isSaving } = useMutation({
+    mutationFn: async () => {
+      try {
+        const res = await fetch(`/api/post/save/${post._id}`, {
+          method: "POST",
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Something went wrong");
+        }
+        return data;
+      } catch (error) {
+        throw new Error(error);
+      }
+    },
+    onSuccess: (updatedBookmarks) => {
+      // this is not the best UX, bc it will refetch all posts
+      // queryClient.invalidateQueries({ queryKey: ["posts"] });
+
+      // instead, update the cache directly for that post
+      queryClient.setQueryData(["posts"], (oldData) => {
+        return oldData.map((p) => {
+          if (p._id === post._id) {
+            return { ...p, saved: updatedBookmarks };
           }
           return p;
         });
@@ -121,6 +155,10 @@ const Post = ({ post }) => {
   const handleLikePost = () => {
     if (isLiking) return;
     likePost();
+  };
+  const handleSavePost = () => {
+    if (isSaving) return;
+    savePost();
   };
 
   return (
@@ -269,8 +307,27 @@ const Post = ({ post }) => {
                 </span>
               </div>
             </div>
-            <div className="flex w-1/3 justify-end gap-2 items-center">
-              <FaRegBookmark className="w-4 h-4 text-slate-500 cursor-pointer" />
+            <div
+              className="flex w-1/3 justify-end gap-2 items-center"
+              onClick={handleSavePost}
+              role="button"
+              aria-label={isSaved ? "Remove from saved" : "Save post"}
+            >
+             {isSaving && <LoadingSpinner size="sm" />}
+                {!isSaved && !isSaving && (
+                  <FaRegBookmark className="w-4 h-4 cursor-pointer text-slate-500 hover:text-blue-500" />
+                )}
+                {isSaved && !isSaving && (
+                  <FaRegBookmark className="w-4 h-4 cursor-pointer text-blue-500 " />
+                )}
+
+                <span
+                  className={`text-sm  group-hover:text-blue-500 ${
+                    isSaved ? "text-blue-500" : "text-slate-500"
+                  }`}
+                >
+                  {post.saved.length}
+                </span>
             </div>
           </div>
         </div>

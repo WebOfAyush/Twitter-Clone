@@ -128,6 +128,40 @@ export const likeUnlikePost = async (req, res) => {
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
+export const savePost = async (req,res) => {
+	try {
+		const userId = req.user._id;
+		const { id: postId } = req.params;
+
+		const post = await Post.findById(postId);
+
+		if (!post) {
+			return res.status(404).json({ error: "Post not found" });
+		}
+
+		const userSavedPost = post.saved.includes(userId);
+
+		if (userSavedPost) {
+			await Post.updateOne({ _id: postId }, { $pull: { saved: userId } });
+			await User.updateOne({ _id: userId }, { $pull: { savedPosts: postId } });
+
+			const updatedBookmarks = post.saved.filter((id) => id.toString() !== userId.toString());
+			res.status(200).json(updatedBookmarks);
+		} else {
+
+			post.saved.push(userId);
+			await User.updateOne({ _id: userId }, { $push: { savedPosts: postId } });
+			await post.save();
+
+			const updatedBookmarks = post.saved;
+			res.status(200).json(updatedBookmarks);
+		}
+	} catch (error) {
+		console.log("Error in savePost controller: ", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
+}
+
 
 export const getAllPosts = async (req, res) => {
 	try {
@@ -173,6 +207,29 @@ export const getLikedPosts = async (req, res) => {
 		res.status(200).json(likedPosts);
 	} catch (error) {
 		console.log("Error in getLikedPosts controller: ", error);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+export const getSavedPosts = async (req, res) => {
+	const userId = req.params.id;
+
+	try {
+		const user = await User.findById(userId);
+		if (!user) return res.status(404).json({ error: "User not found" });
+
+		const savedPosts = await Post.find({ _id: { $in: user.savedPosts } })
+			.populate({
+				path: "user",
+				select: "-password",
+			})
+			.populate({
+				path: "comments.user",
+				select: "-password",
+			});
+
+		res.status(200).json(savedPosts);
+	} catch (error) {
+		console.log("Error in getSavedPosts controller: ", error);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
